@@ -1,0 +1,16 @@
+# Virtual Environment
+venv/
+
+# FastF1 Cache
+data/cache/
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# VS Code settings
+.vscode/
+
+# Requirements file (optional, but good practice to add if auto-generated)
+# If you have a .flaskenv file, you might want to ignore it too.
+.flaskenv
