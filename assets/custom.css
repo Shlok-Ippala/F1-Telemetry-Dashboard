@@ -1,0 +1,149 @@
+/* Navbar styling */
+.navbar {
+    background-color: #111111 !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-brand,
+.navbar .nav-link {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.navbar .nav-link:hover {
+    color: #ffffff !important;
+}
+
+/* Black card background */
+.transparent-card {
+    background-color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Dropdown styling */
+.transparent-card .Select-control,
+.transparent-card .Select-menu-outer,
+.transparent-card .Select-option {
+    background-color: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+/* Dropdown menu container */
+.transparent-card .Select-menu {
+    background-color: #000000 !important;
+}
+
+.Select-menu-outer {
+    background-color: #000000 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.VirtualizedSelectOption,
+.VirtualizedSelectFocusedOption {
+    background-color: #000000 !important;
+    color: white !important;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: #222222 !important;
+}
+
+.transparent-card .Select-value-label,
+.transparent-card .Select-placeholder,
+.transparent-card .Select-input input {
+    color: white !important;
+}
+
+.transparent-card .Select-arrow {
+    border-color: white transparent transparent !important;
+}
+
+.transparent-card .Select-option:hover {
+    background-color: #222222 !important;
+}
+
+.transparent-card .Select-option.is-focused {
+    background-color: #333333 !important;
+}
+
+/* Hide default multi-select tags for driver dropdown */
+.transparent-card #driver-dropdown .Select-value {
+    display: none !important;
+}
+
+/* Label styling */
+.transparent-card label {
+    color: white !important;
+}
+
+/* Driver tag styling */
+.driver-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px 4px 2px 0;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background-color: #000000;
+}
+
+/* Sketch Graph button styling with radial hover effect */
+.transparent-card .btn-primary {
+    background-color: #000000 !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: color 0.4s ease !important;
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+}
+
+.transparent-card .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: var(--mouse-y);
+    left: var(--mouse-x);
+    width: 0;
+    height: 0;
+    background-color: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+    z-index: -1;
+}
+
+.transparent-card .btn-primary:hover {
+    color: black !important;
+}
+
+.transparent-card .btn-primary:hover::before {
+    width: 2000px;
+    height: 2000px;
+}
+
+/* Modal styling */
+.modal-content {
+    background-color: #111111 !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    color: white !important;
+}
+
+.btn-close {
+    filter: invert(1);
+}
+
