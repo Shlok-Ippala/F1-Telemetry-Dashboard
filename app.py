@@ -1,7 +1,6 @@
 # In app.py
 
-# (Remove all the temporary print statements)
-
+import os
 from dash import dcc, html, Input, Output
 import dash_mantine_components as dmc
 import fastf1
@@ -9,7 +8,10 @@ import fastf1
 from app_instance import app, server
 from pages import home, lap_comparison, race_comparison, year_analysis
 
-# fastf1.Cache.enable_cache('data/cache')  <-- DELETE THIS LINE FROM HERE
+# Enable FastF1 cache - use /tmp for cloud deployments, local folder otherwise
+cache_dir = '/tmp/f1_cache' if os.environ.get('RENDER') else 'data/cache'
+os.makedirs(cache_dir, exist_ok=True)
+fastf1.Cache.enable_cache(cache_dir)
 
 # Define the main layout of the app wrapped in MantineProvider
 app.layout = dmc.MantineProvider(
@@ -36,9 +38,8 @@ def display_page(pathname):
 
 # Run the app
 if __name__ == '__main__':
-    # --- THIS IS THE FIX ---
-    # Move the cache enabling here. It will now only run once
-    # in the main process, not in the reloader's watcher.
-    fastf1.Cache.enable_cache('data/cache')
+    # Get port from environment variable (for Render) or default to 8050
+    port = int(os.environ.get('PORT', 8050))
+    debug = os.environ.get('RENDER') is None  # Debug only in local dev
     
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=port, debug=debug)
