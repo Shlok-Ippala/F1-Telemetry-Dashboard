@@ -147,3 +147,19 @@
     filter: invert(1);
 }
 
+/* Loading indicator for driver dropdowns */
+._dash-loading {
+    position: relative;
+}
+
+._dash-loading::after {
+    content: 'Loading drivers...';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+    z-index: 10;
+}
+

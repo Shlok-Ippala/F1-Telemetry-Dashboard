@@ -9,14 +9,20 @@ layout = html.Div([
     html.H3("Choose an analysis mode:", style={'textAlign': 'center', 'marginTop': '20px'}),
     html.Div([
         dcc.Link(
-            html.Button('Lap Comparison', style={'width': '200px', 'height': '50px', 'fontSize': '18px'}),
+            html.Button('Qualifying Analysis', style={'width': '200px', 'height': '50px', 'fontSize': '18px'}),
             href='/lap-comparison'
         ),
         html.Br(),
         html.Br(),
         dcc.Link(
-            html.Button('Race Comparison', style={'width': '200px', 'height': '50px', 'fontSize': '18px'}),
+            html.Button('Weekend Analysis', style={'width': '200px', 'height': '50px', 'fontSize': '18px'}),
             href='/race-comparison'
+        ),
+        html.Br(),
+        html.Br(),
+        dcc.Link(
+            html.Button('Year Analysis', style={'width': '200px', 'height': '50px', 'fontSize': '18px'}),
+            href='/year-analysis'
         ),
     ], style={'textAlign': 'center', 'marginTop': '30px'})
 ])

@@ -14,8 +14,9 @@ from app_instance import app
 # --- Reusable Navbar Component ---
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Lap Comparison", href="/lap-comparison")),
-        dbc.NavItem(dbc.NavLink("Race Comparison", href="/race-comparison")),
+        dbc.NavItem(dbc.NavLink("Qualifying Analysis", href="/lap-comparison")),
+        dbc.NavItem(dbc.NavLink("Weekend Analysis", href="/race-comparison")),
+        dbc.NavItem(dbc.NavLink("Year Analysis", href="/year-analysis")),
     ],
     brand="🏎️ F1 Analytics Dashboard",
     brand_href="/",
@@ -26,7 +27,7 @@ navbar = dbc.NavbarSimple(
 
 
 # --- Dropdown options ---
-years = [2021, 2022, 2023, 2024, 2025]
+years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 metrics = ['Speed', 'Throttle', 'Brake', 'RPM', 'nGear', 'Delta', 'Track Dominance']
 
 # --- Define the Controls Panel ---
@@ -34,7 +35,7 @@ controls = dbc.Card(
     [
         dbc.Row([
             dbc.Col(dbc.Label("Select Year"), width=12),
-            dbc.Col(dcc.Dropdown(years, 2024, id='year-dropdown', clearable=False), width=12),
+            dbc.Col(dcc.Dropdown(years, 2025, id='year-dropdown', clearable=False), width=12),
         ], className="mb-3"),
 
         dbc.Row([
@@ -44,7 +45,15 @@ controls = dbc.Card(
 
         dbc.Row([
             dbc.Col(dbc.Label("Select Driver(s)"), width=12),
-            dbc.Col(dcc.Dropdown(id='driver-dropdown', multi=True, placeholder="Select driver(s)"), width=12),
+            dbc.Col(
+                dcc.Loading(
+                    id="loading-drivers",
+                    type="default",
+                    children=dcc.Dropdown(id='driver-dropdown', multi=True, placeholder="Select driver(s)"),
+                    fullscreen=False,
+                    style={'minHeight': '38px'}
+                ), width=12
+            ),
             dbc.Col(html.Div(id='driver-tags-display', style={'marginTop': '8px'}), width=12),
         ], className="mb-3"),
 
@@ -84,7 +93,7 @@ layout = html.Div([
         dbc.Row([
             # Column for the controls
             dbc.Col([
-                html.H3("Telemetry Controls", style={'color': 'white'}),
+                html.H3("Qualifying Analysis", style={'color': 'white'}),
                 controls
             ], md=4),
 
@@ -140,10 +149,33 @@ def update_driver_options(selected_race, selected_year):
             driver_colors[abbr] = color
             options.append({'label': abbr, 'value': abbr})
         
+        # Add "All Drivers" option at the top
+        all_drivers_option = {'label': '⭐ All Drivers', 'value': 'ALL_DRIVERS'}
+        options.insert(0, all_drivers_option)
+        
         return options, driver_colors
     except Exception as e:
         print(f"Error loading session for driver options: {e}")
         return [], {}
+
+
+@app.callback(
+    Output('driver-dropdown', 'value'),
+    Input('driver-dropdown', 'value'),
+    State('driver-dropdown', 'options'),
+    prevent_initial_call=True
+)
+def handle_all_drivers_selection(selected_drivers, options):
+    """When 'All Drivers' is selected, expand to all individual drivers."""
+    if not selected_drivers or not options:
+        return selected_drivers
+    
+    if 'ALL_DRIVERS' in selected_drivers:
+        # Get all driver values except ALL_DRIVERS
+        all_driver_values = [opt['value'] for opt in options if opt['value'] != 'ALL_DRIVERS']
+        return all_driver_values
+    
+    return selected_drivers
 
 
 @app.callback(
@@ -202,8 +234,8 @@ def update_graph(n_clicks, drivers, year, race, metric):
     empty_layout = dict(
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
-        xaxis=dict(color='white', gridcolor='rgba(255,255,255,0.1)', linecolor='white'),
-        yaxis=dict(color='white', gridcolor='rgba(255,255,255,0.1)', linecolor='white'),
+        xaxis=dict(color='white', gridcolor='rgba(255,255,255,0.1)', linecolor='white', rangemode='tozero'),
+        yaxis=dict(color='white', gridcolor='rgba(255,255,255,0.1)', linecolor='white', rangemode='tozero'),
         font=dict(color='white')
     )
     if n_clicks is None or n_clicks == 0:

@@ -6,7 +6,7 @@ from dash import dcc, html, Input, Output
 import fastf1
 
 from app_instance import app, server
-from pages import home, lap_comparison, race_comparison
+from pages import home, lap_comparison, race_comparison, year_analysis
 
 # fastf1.Cache.enable_cache('data/cache')  <-- DELETE THIS LINE FROM HERE
 
@@ -24,6 +24,8 @@ def display_page(pathname):
         return lap_comparison.layout
     elif pathname == '/race-comparison':
         return race_comparison.layout
+    elif pathname == '/year-analysis':
+        return year_analysis.layout
     else:
         # The default page is the home page
         return home.layout
