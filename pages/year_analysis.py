@@ -18,7 +18,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Weekend Analysis", href="/race-comparison")),
         dbc.NavItem(dbc.NavLink("Year Analysis", href="/year-analysis")),
     ],
-    brand="🏎️ F1 Analytics Dashboard",
+    brand="F1 Analytics Dashboard",
     brand_href="/",
     color="primary",
     dark=True,
@@ -29,34 +29,55 @@ navbar = dbc.NavbarSimple(
 years = list(range(1950, 2026))  # Ergast has data back to 1950
 chart_types = ['Points Graph']
 
+# --- Page Header ---
+page_header = html.Div([
+    html.H2("Year Analysis", className="page-title"),
+    html.P("Track championship points progression and season-long driver performance", className="page-subtitle")
+], className="page-header")
+
+# --- Empty State for Graph ---
+empty_state = html.Div([
+    html.H4("No Data Selected", className="empty-state-title"),
+    html.P("Select a year and drivers, then click 'Sketch Graph' to visualize", className="empty-state-text")
+], className="graph-empty-state", id="year-graph-empty-state")
+
 # --- Define the Controls Panel ---
 controls = dbc.Card(
     [
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Year"), width=12),
-            dbc.Col(dcc.Dropdown(years, 2025, id='year-analysis-year-dropdown', clearable=False), width=12),
-        ], className="mb-3"),
+        # Year Selection Section
+        html.Div([
+            dbc.Row([
+                dbc.Col(html.Label("Season", className="control-label"), width=12),
+                dbc.Col(dcc.Dropdown(years, 2025, id='year-analysis-year-dropdown', clearable=False), width=12),
+            ]),
+        ], className="control-section"),
 
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Driver(s)"), width=12),
-            dbc.Col(
-                dcc.Loading(
-                    id="loading-year-drivers",
-                    type="default",
-                    children=dcc.Dropdown(id='year-analysis-driver-dropdown', multi=True, placeholder="Select driver(s)"),
-                    fullscreen=False,
-                    style={'minHeight': '38px'}
-                ), width=12
-            ),
-            dbc.Col(html.Div(id='year-analysis-driver-tags-display', style={'marginTop': '8px'}), width=12),
-        ], className="mb-3"),
+        # Driver Selection Section
+        html.Div([
+            dbc.Row([
+                dbc.Col(html.Label("Drivers", className="control-label"), width=12),
+                dbc.Col(
+                    dcc.Loading(
+                        id="loading-year-drivers",
+                        type="default",
+                        children=dcc.Dropdown(id='year-analysis-driver-dropdown', multi=True, placeholder="Select driver(s)"),
+                        fullscreen=False,
+                        style={'minHeight': '38px'}
+                    ), width=12
+                ),
+                dbc.Col(html.Div(id='year-analysis-driver-tags-display', style={'marginTop': '8px'}), width=12),
+            ]),
+        ], className="control-section"),
 
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Chart Type"), width=12),
-            dbc.Col(dcc.Dropdown(chart_types, 'Points Graph', id='year-analysis-chart-dropdown', clearable=False), width=12),
-        ], className="mb-3"),
+        # Chart Type Section
+        html.Div([
+            dbc.Row([
+                dbc.Col(html.Label("Chart Type", className="control-label"), width=12),
+                dbc.Col(dcc.Dropdown(chart_types, 'Points Graph', id='year-analysis-chart-dropdown', clearable=False), width=12),
+            ]),
+        ], className="control-section"),
 
-        dbc.Button('Sketch Graph', id='year-analysis-sketch-button', n_clicks=0, color="primary", className="w-100"),
+        dbc.Button('Sketch Graph', id='year-analysis-sketch-button', n_clicks=0, color="primary", className="w-100 mt-2"),
         
         # Store for driver-team color mapping
         dcc.Store(id='year-analysis-driver-colors-store', data={})
@@ -72,17 +93,20 @@ layout = html.Div([
         dbc.Row([
             # Column for the controls
             dbc.Col([
-                html.H3("Year Analysis", style={'color': 'white'}),
+                page_header,
                 controls
             ], md=4),
 
             # Column for the graph
             dbc.Col([
-                dcc.Loading(
-                    id="year-analysis-loading-graph",
-                    type="default",
-                    children=dcc.Graph(id='year-analysis-graph', style={'height': '80vh'})
-                )
+                html.Div(id='year-graph-container', children=[
+                    empty_state,
+                    dcc.Loading(
+                        id="year-analysis-loading-graph",
+                        type="default",
+                        children=dcc.Graph(id='year-analysis-graph', style={'height': '80vh', 'display': 'none'})
+                    )
+                ])
             ], md=8)
         ])
     ], fluid=True)
@@ -221,6 +245,8 @@ def display_driver_tags(selected_drivers, driver_colors):
 
 @app.callback(
     Output('year-analysis-graph', 'figure'),
+    Output('year-analysis-graph', 'style'),
+    Output('year-graph-empty-state', 'style'),
     Input('year-analysis-sketch-button', 'n_clicks'),
     State('year-analysis-driver-dropdown', 'value'),
     State('year-analysis-year-dropdown', 'value'),
@@ -236,23 +262,30 @@ def update_graph(n_clicks, drivers, year, chart_type, driver_colors):
         font=dict(color='white')
     )
     
+    # Styles for showing/hiding
+    graph_hidden = {'height': '80vh', 'display': 'none'}
+    graph_visible = {'height': '80vh', 'display': 'block'}
+    empty_hidden = {'display': 'none'}
+    empty_visible = {}
+    
     if n_clicks is None or n_clicks == 0:
         fig = go.Figure()
-        fig.update_layout(title="Select filters and click 'Sketch Graph' to display data", **empty_layout)
-        return fig
+        fig.update_layout(title="", **empty_layout)
+        return fig, graph_hidden, empty_visible
     
     if not drivers or not year:
         fig = go.Figure()
         fig.update_layout(title="Please select Year and at least one Driver to sketch the graph.", **empty_layout)
-        return fig
+        return fig, graph_visible, empty_hidden
     
     try:
         if chart_type == 'Points Graph':
-            return create_points_graph(year, drivers, driver_colors, empty_layout)
+            result = create_points_graph(year, drivers, driver_colors, empty_layout)
+            return result, graph_visible, empty_hidden
         else:
             fig = go.Figure()
             fig.update_layout(title="Unknown chart type selected.", **empty_layout)
-            return fig
+            return fig, graph_visible, empty_hidden
             
     except Exception as e:
         print(f"Error generating graph: {e}")
@@ -263,7 +296,7 @@ def update_graph(n_clicks, drivers, year, chart_type, driver_colors):
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(color='white')
         )
-        return fig
+        return fig, graph_visible, empty_hidden
 
 
 def create_points_graph(year, drivers, driver_colors, empty_layout):

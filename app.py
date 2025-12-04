@@ -3,6 +3,7 @@
 # (Remove all the temporary print statements)
 
 from dash import dcc, html, Input, Output
+import dash_mantine_components as dmc
 import fastf1
 
 from app_instance import app, server
@@ -10,11 +11,14 @@ from pages import home, lap_comparison, race_comparison, year_analysis
 
 # fastf1.Cache.enable_cache('data/cache')  <-- DELETE THIS LINE FROM HERE
 
-# Define the main layout of the app
-app.layout = html.Div([
-    dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
-])
+# Define the main layout of the app wrapped in MantineProvider
+app.layout = dmc.MantineProvider(
+    children=[
+        dcc.Location(id='url', refresh=False),
+        html.Div(id='page-content')
+    ],
+    forceColorScheme="dark"
+)
 
 # This callback changes the 'page-content' based on the URL
 @app.callback(Output('page-content', 'children'),

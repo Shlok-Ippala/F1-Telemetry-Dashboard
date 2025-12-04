@@ -1,3 +1,98 @@
+/* Page header styling */
+.page-header {
+    margin-bottom: 24px;
+}
+
+.page-title {
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+
+.page-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.95rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Control panel styling */
+.control-section {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.control-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px !important;
+}
+
+/* Mantine Select dark theme styling */
+.mantine-select-dark .mantine-Select-input {
+    background-color: #000 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+.mantine-select-dark .mantine-Select-input::placeholder {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.mantine-Select-dropdown {
+    background-color: #000 !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.mantine-Select-option {
+    color: white !important;
+}
+
+.mantine-Select-option:hover,
+.mantine-Select-option[data-combobox-selected] {
+    background-color: #222 !important;
+}
+
+.mantine-Select-option[data-combobox-active] {
+    background-color: #333 !important;
+}
+
+/* Empty state for graph */
+.graph-empty-state {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+}
+
+.empty-state-title {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+.empty-state-text {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.95rem;
+    margin: 0;
+    text-align: center;
+    max-width: 300px;
+}
+
 /* Navbar styling */
 .navbar {
     background-color: #111111 !important;
@@ -11,6 +106,27 @@
 
 .navbar .nav-link:hover {
     color: #ffffff !important;
+}
+
+/* Navbar item separators */
+.navbar .nav-item {
+    position: relative;
+}
+
+.navbar .nav-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 16px;
+    width: 1px;
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.navbar .nav-item .nav-link {
+    padding-left: 16px;
+    padding-right: 16px;
 }
 
 /* Black card background */
@@ -161,5 +277,173 @@
     color: white;
     font-size: 14px;
     z-index: 10;
+}
+
+/* Home page container */
+.home-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+/* Hero section */
+.hero-section {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    color: white;
+    margin-bottom: 16px;
+    letter-spacing: -1px;
+    text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+    margin: 0;
+}
+
+/* Cards container */
+.cards-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 1200px;
+}
+
+/* Feature card styling */
+.feature-card {
+    width: 300px;
+    padding: 40px 30px;
+    background-color: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    
+    /* Entrance animation */
+    animation: slideUp 0.6s ease forwards;
+    opacity: 0;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feature-card::before {
+    content: '';
+    position: absolute;
+    top: var(--mouse-y);
+    left: var(--mouse-x);
+    width: 0;
+    height: 0;
+    background-color: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+    z-index: -1;
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.feature-card:hover::before {
+    width: 800px;
+    height: 800px;
+}
+
+.feature-card:hover .card-icon,
+.feature-card:hover .card-title,
+.feature-card:hover .card-description {
+    color: black;
+}
+
+/* Card title */
+.card-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 12px 0;
+    transition: color 0.4s ease;
+}
+
+/* Card description */
+.card-description {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.5;
+    margin: 0;
+    transition: color 0.4s ease;
+}
+
+.feature-card:hover .card-description {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Legacy home button (keeping for compatibility) */
+.home-btn {
+    width: 220px;
+    height: 55px;
+    font-size: 18px;
+    font-weight: 600;
+    background-color: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: color 0.4s ease, border-color 0.3s ease;
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+}
+
+.home-btn::before {
+    content: '';
+    position: absolute;
+    top: var(--mouse-y);
+    left: var(--mouse-x);
+    width: 0;
+    height: 0;
+    background-color: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s ease, height 0.5s ease;
+    z-index: -1;
+}
+
+.home-btn:hover {
+    color: black;
+    border-color: white;
+}
+
+.home-btn:hover::before {
+    width: 600px;
+    height: 600px;
 }
 

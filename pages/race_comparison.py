@@ -2,6 +2,8 @@
 
 from dash import dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+from dash_iconify import DashIconify
 import fastf1
 from fastf1 import plotting
 import plotly.graph_objects as go
@@ -10,6 +12,101 @@ import numpy as np
 
 from app_instance import app
 
+
+# --- Flag icon mapping for Grand Prix (using Iconify flag icons) ---
+RACE_FLAG_ICONS = {
+    'bahrain': 'circle-flags:bh',
+    'saudi': 'circle-flags:sa',
+    'jeddah': 'circle-flags:sa',
+    'australia': 'circle-flags:au',
+    'melbourne': 'circle-flags:au',
+    'japan': 'circle-flags:jp',
+    'suzuka': 'circle-flags:jp',
+    'china': 'circle-flags:cn',
+    'shanghai': 'circle-flags:cn',
+    'miami': 'circle-flags:us',
+    'emilia': 'circle-flags:it',
+    'imola': 'circle-flags:it',
+    'monaco': 'circle-flags:mc',
+    'canada': 'circle-flags:ca',
+    'montreal': 'circle-flags:ca',
+    'spain': 'circle-flags:es',
+    'barcelona': 'circle-flags:es',
+    'austria': 'circle-flags:at',
+    'spielberg': 'circle-flags:at',
+    'britain': 'circle-flags:gb',
+    'british': 'circle-flags:gb',
+    'silverstone': 'circle-flags:gb',
+    'hungary': 'circle-flags:hu',
+    'budapest': 'circle-flags:hu',
+    'hungaroring': 'circle-flags:hu',
+    'belgium': 'circle-flags:be',
+    'spa': 'circle-flags:be',
+    'netherlands': 'circle-flags:nl',
+    'dutch': 'circle-flags:nl',
+    'zandvoort': 'circle-flags:nl',
+    'italy': 'circle-flags:it',
+    'monza': 'circle-flags:it',
+    'italian': 'circle-flags:it',
+    'azerbaijan': 'circle-flags:az',
+    'baku': 'circle-flags:az',
+    'singapore': 'circle-flags:sg',
+    'marina bay': 'circle-flags:sg',
+    'united states': 'circle-flags:us',
+    'austin': 'circle-flags:us',
+    'cota': 'circle-flags:us',
+    'americas': 'circle-flags:us',
+    'mexico': 'circle-flags:mx',
+    'brazilian': 'circle-flags:br',
+    'brazil': 'circle-flags:br',
+    'sao paulo': 'circle-flags:br',
+    'são paulo': 'circle-flags:br',
+    'paulo': 'circle-flags:br',
+    'interlagos': 'circle-flags:br',
+    'las vegas': 'circle-flags:us',
+    'vegas': 'circle-flags:us',
+    'qatar': 'circle-flags:qa',
+    'losail': 'circle-flags:qa',
+    'abu dhabi': 'circle-flags:ae',
+    'yas marina': 'circle-flags:ae',
+    'portugal': 'circle-flags:pt',
+    'portimao': 'circle-flags:pt',
+    'turkey': 'circle-flags:tr',
+    'istanbul': 'circle-flags:tr',
+    'styria': 'circle-flags:at',
+    'eifel': 'circle-flags:de',
+    'nurburgring': 'circle-flags:de',
+    'russia': 'circle-flags:ru',
+    'sochi': 'circle-flags:ru',
+    'tuscany': 'circle-flags:it',
+    'mugello': 'circle-flags:it',
+    'sakhir': 'circle-flags:bh',
+    'france': 'circle-flags:fr',
+    'french': 'circle-flags:fr',
+    'paul ricard': 'circle-flags:fr',
+    'korean': 'circle-flags:kr',
+    'korea': 'circle-flags:kr',
+    'indian': 'circle-flags:in',
+    'india': 'circle-flags:in',
+    'german': 'circle-flags:de',
+    'germany': 'circle-flags:de',
+    'hockenheim': 'circle-flags:de',
+    'malaysian': 'circle-flags:my',
+    'malaysia': 'circle-flags:my',
+    'sepang': 'circle-flags:my',
+    'pre-season': 'circle-flags:bh',
+    'testing': 'circle-flags:bh',
+}
+
+def get_race_flag_icon(race_name):
+    """Get the flag icon identifier for a race based on its name."""
+    race_lower = race_name.lower()
+    for keyword, icon in RACE_FLAG_ICONS.items():
+        if keyword in race_lower:
+            return icon
+    return 'circle-flags:xx'
+
+
 # --- Reusable Navbar Component ---
 navbar = dbc.NavbarSimple(
     children=[
@@ -17,7 +114,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Weekend Analysis", href="/race-comparison")),
         dbc.NavItem(dbc.NavLink("Year Analysis", href="/year-analysis")),
     ],
-    brand="🏎️ F1 Analytics Dashboard",
+    brand="F1 Analytics Dashboard",
     brand_href="/",
     color="primary",
     dark=True,
@@ -28,72 +125,116 @@ navbar = dbc.NavbarSimple(
 years = [2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025]
 chart_types = ['Lap Times', 'Box Plot', 'Violin Plot', 'Aero Performance']
 
+
+# --- Page Header ---
+page_header = html.Div([
+    html.H2("Weekend Analysis", className="page-title"),
+    html.P("Analyze race lap times, tire strategies, and team aero performance", className="page-subtitle")
+], className="page-header")
+
+# --- Empty State for Graph ---
+empty_state = html.Div([
+    html.H4("No Data Selected", className="empty-state-title"),
+    html.P("Select a year, race, session, and drivers, then click 'Sketch Graph' to visualize", className="empty-state-text")
+], className="graph-empty-state", id="race-graph-empty-state")
+
 # --- Define the Controls Panel ---
 controls = dbc.Card(
     [
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Year"), width=12),
-            dbc.Col(dcc.Dropdown(years, 2025, id='race-year-dropdown', clearable=False), width=12),
-        ], className="mb-3"),
-
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Race"), width=12),
-            dbc.Col(dcc.Dropdown(id='race-event-dropdown', placeholder="Select a Grand Prix"), width=12),
-        ], className="mb-3"),
-
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Session"), width=12),
-            dbc.Col(
-                dcc.Loading(
-                    id="loading-session",
-                    type="default",
-                    children=dcc.Dropdown(id='race-session-dropdown', placeholder="Select a session"),
-                    fullscreen=False,
-                    style={'minHeight': '38px'}
-                ), width=12
-            ),
-        ], className="mb-3"),
-
-        dbc.Row([
-            dbc.Col(dbc.Label("Select Chart Type"), width=12),
-            dbc.Col(dcc.Dropdown(chart_types, 'Lap Times', id='race-chart-dropdown', clearable=False), width=12),
-        ], className="mb-3"),
-
-        # Dynamic driver/team selection row
-        html.Div(id='driver-team-selection-container', children=[
+        # Session Selection Section
+        html.Div([
             dbc.Row([
-                dbc.Col(dbc.Label("Select Driver(s)", id='driver-team-label'), width=12),
+                dbc.Col(html.Label("Year", className="control-label"), width=12),
+                dbc.Col(dcc.Dropdown(years, 2025, id='race-year-dropdown', clearable=False), width=12),
+            ], className="mb-3"),
+
+            dbc.Row([
+                dbc.Col(html.Label("Grand Prix", className="control-label"), width=12),
+                dbc.Col(
+                    html.Div([
+                        dcc.Store(id='race-event-options-store', data=[]),
+                        dmc.Select(
+                            id='race-event-dropdown',
+                            placeholder="Select a Grand Prix",
+                            searchable=True,
+                            nothingFoundMessage="No races found",
+                            leftSection=html.Img(
+                                id="race-event-flag-icon",
+                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='15' viewBox='0 0 20 15'%3E%3Crect fill='%23fff' width='20' height='15'/%3E%3Cg fill='%23000'%3E%3Crect x='0' y='0' width='4' height='3'/%3E%3Crect x='8' y='0' width='4' height='3'/%3E%3Crect x='16' y='0' width='4' height='3'/%3E%3Crect x='4' y='3' width='4' height='3'/%3E%3Crect x='12' y='3' width='4' height='3'/%3E%3Crect x='0' y='6' width='4' height='3'/%3E%3Crect x='8' y='6' width='4' height='3'/%3E%3Crect x='16' y='6' width='4' height='3'/%3E%3Crect x='4' y='9' width='4' height='3'/%3E%3Crect x='12' y='9' width='4' height='3'/%3E%3Crect x='0' y='12' width='4' height='3'/%3E%3Crect x='8' y='12' width='4' height='3'/%3E%3Crect x='16' y='12' width='4' height='3'/%3E%3C/g%3E%3C/svg%3E",
+                                width=20,
+                                height=15,
+                                style={"borderRadius": "2px"}
+                            ),
+                            styles={
+                                "input": {"backgroundColor": "#000", "borderColor": "rgba(255,255,255,0.2)", "color": "white"},
+                                "dropdown": {"backgroundColor": "#000", "borderColor": "rgba(255,255,255,0.2)"},
+                            },
+                            className="mantine-select-dark"
+                        ),
+                    ]),
+                    width=12
+                ),
+            ], className="mb-3"),
+
+            dbc.Row([
+                dbc.Col(html.Label("Session", className="control-label"), width=12),
                 dbc.Col(
                     dcc.Loading(
-                        id="loading-race-drivers",
+                        id="loading-session",
                         type="default",
-                        children=dcc.Dropdown(id='race-driver-dropdown', multi=True, placeholder="Select driver(s)"),
+                        children=dcc.Dropdown(id='race-session-dropdown', placeholder="Select a session"),
                         fullscreen=False,
                         style={'minHeight': '38px'}
                     ), width=12
                 ),
-                dbc.Col(html.Div(id='race-driver-tags-display', style={'marginTop': '8px'}), width=12),
-            ], className="mb-3"),
-        ]),
+            ]),
+        ], className="control-section"),
 
-        # Hidden team dropdown (shown when Aero Performance is selected)
-        html.Div(id='team-selection-container', children=[
+        # Chart Type Section
+        html.Div([
             dbc.Row([
-                dbc.Col(dbc.Label("Select Team(s)"), width=12),
-                dbc.Col(
-                    dcc.Loading(
-                        id="loading-race-teams",
-                        type="default",
-                        children=dcc.Dropdown(id='race-team-dropdown', multi=True, placeholder="Select team(s)"),
-                        fullscreen=False,
-                        style={'minHeight': '38px'}
-                    ), width=12
-                ),
-                dbc.Col(html.Div(id='race-team-tags-display', style={'marginTop': '8px'}), width=12),
-            ], className="mb-3"),
-        ], style={'display': 'none'}),
+                dbc.Col(html.Label("Chart Type", className="control-label"), width=12),
+                dbc.Col(dcc.Dropdown(chart_types, 'Lap Times', id='race-chart-dropdown', clearable=False), width=12),
+            ]),
+        ], className="control-section"),
 
-        dbc.Button('Sketch Graph', id='race-sketch-button', n_clicks=0, color="primary", className="w-100"),
+        # Dynamic driver/team selection section
+        html.Div([
+            html.Div(id='driver-team-selection-container', children=[
+                dbc.Row([
+                    dbc.Col(html.Label("Drivers", className="control-label", id='driver-team-label'), width=12),
+                    dbc.Col(
+                        dcc.Loading(
+                            id="loading-race-drivers",
+                            type="default",
+                            children=dcc.Dropdown(id='race-driver-dropdown', multi=True, placeholder="Select driver(s)"),
+                            fullscreen=False,
+                            style={'minHeight': '38px'}
+                        ), width=12
+                    ),
+                    dbc.Col(html.Div(id='race-driver-tags-display', style={'marginTop': '8px'}), width=12),
+                ]),
+            ]),
+
+            # Hidden team dropdown (shown when Aero Performance is selected)
+            html.Div(id='team-selection-container', children=[
+                dbc.Row([
+                    dbc.Col(html.Label("Teams", className="control-label"), width=12),
+                    dbc.Col(
+                        dcc.Loading(
+                            id="loading-race-teams",
+                            type="default",
+                            children=dcc.Dropdown(id='race-team-dropdown', multi=True, placeholder="Select team(s)"),
+                            fullscreen=False,
+                            style={'minHeight': '38px'}
+                        ), width=12
+                    ),
+                    dbc.Col(html.Div(id='race-team-tags-display', style={'marginTop': '8px'}), width=12),
+                ]),
+            ], style={'display': 'none'}),
+        ], className="control-section"),
+
+        dbc.Button('Sketch Graph', id='race-sketch-button', n_clicks=0, color="primary", className="w-100 mt-2"),
         
         # Store for driver-team color mapping
         dcc.Store(id='race-driver-colors-store', data={}),
@@ -110,17 +251,20 @@ layout = html.Div([
         dbc.Row([
             # Column for the controls
             dbc.Col([
-                html.H3("Weekend Analysis", style={'color': 'white'}),
+                page_header,
                 controls
             ], md=4),
 
             # Column for the graph
             dbc.Col([
-                dcc.Loading(
-                    id="race-loading-graph",
-                    type="default",
-                    children=dcc.Graph(id='race-graph', style={'height': '80vh'})
-                )
+                html.Div(id='race-graph-container', children=[
+                    empty_state,
+                    dcc.Loading(
+                        id="race-loading-graph",
+                        type="default",
+                        children=dcc.Graph(id='race-graph', style={'height': '80vh', 'display': 'none'})
+                    )
+                ])
             ], md=8)
         ])
     ], fluid=True)
@@ -129,15 +273,115 @@ layout = html.Div([
 # --- CALLBACKS ---
 
 @app.callback(
-    Output('race-event-dropdown', 'options'),
+    Output('race-event-dropdown', 'data'),
+    Output('race-event-options-store', 'data'),
     Input('race-year-dropdown', 'value')
 )
 def update_race_options(selected_year):
     if not selected_year:
-        return []
+        return [], []
     schedule = fastf1.get_event_schedule(selected_year)
     races = schedule['EventName'].tolist()
-    return [{'label': r, 'value': r} for r in races]
+    options = [{'label': r, 'value': r} for r in races]
+    return options, options
+
+
+# Checkered flag SVG data URI for default/unselected state
+CHECKERED_FLAG_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='15' viewBox='0 0 20 15'%3E%3Crect fill='%23fff' width='20' height='15'/%3E%3Cg fill='%23000'%3E%3Crect x='0' y='0' width='4' height='3'/%3E%3Crect x='8' y='0' width='4' height='3'/%3E%3Crect x='16' y='0' width='4' height='3'/%3E%3Crect x='4' y='3' width='4' height='3'/%3E%3Crect x='12' y='3' width='4' height='3'/%3E%3Crect x='0' y='6' width='4' height='3'/%3E%3Crect x='8' y='6' width='4' height='3'/%3E%3Crect x='16' y='6' width='4' height='3'/%3E%3Crect x='4' y='9' width='4' height='3'/%3E%3Crect x='12' y='9' width='4' height='3'/%3E%3Crect x='0' y='12' width='4' height='3'/%3E%3Crect x='8' y='12' width='4' height='3'/%3E%3Crect x='16' y='12' width='4' height='3'/%3E%3C/g%3E%3C/svg%3E"
+
+@app.callback(
+    Output('race-event-flag-icon', 'src'),
+    Input('race-event-dropdown', 'value')
+)
+def update_race_event_flag(selected_race):
+    """Update the flag image when a race is selected."""
+    if not selected_race:
+        return CHECKERED_FLAG_SVG
+    
+    # Get the country code from the race name
+    country_code = get_flag_country_code(selected_race)
+    return f"https://flagcdn.com/w20/{country_code}.png"
+
+
+# Country code mapping for FlagCDN
+FLAG_COUNTRY_CODES = {
+    'bahrain': 'bh',
+    'saudi': 'sa',
+    'jeddah': 'sa',
+    'australia': 'au',
+    'australian': 'au',
+    'japan': 'jp',
+    'japanese': 'jp',
+    'china': 'cn',
+    'chinese': 'cn',
+    'miami': 'us',
+    'emilia': 'it',
+    'imola': 'it',
+    'monaco': 'mc',
+    'canada': 'ca',
+    'canadian': 'ca',
+    'spain': 'es',
+    'spanish': 'es',
+    'austria': 'at',
+    'austrian': 'at',
+    'britain': 'gb',
+    'british': 'gb',
+    'hungary': 'hu',
+    'hungarian': 'hu',
+    'belgium': 'be',
+    'belgian': 'be',
+    'spa': 'be',
+    'netherlands': 'nl',
+    'dutch': 'nl',
+    'italy': 'it',
+    'italian': 'it',
+    'monza': 'it',
+    'azerbaijan': 'az',
+    'baku': 'az',
+    'singapore': 'sg',
+    'united states': 'us',
+    'americas': 'us',
+    'mexico': 'mx',
+    'mexican': 'mx',
+    'brazil': 'br',
+    'brazilian': 'br',
+    'paulo': 'br',
+    'las vegas': 'us',
+    'vegas': 'us',
+    'qatar': 'qa',
+    'abu dhabi': 'ae',
+    'portugal': 'pt',
+    'turkish': 'tr',
+    'turkey': 'tr',
+    'styria': 'at',
+    'eifel': 'de',
+    'russia': 'ru',
+    'russian': 'ru',
+    'sochi': 'ru',
+    'tuscany': 'it',
+    'tuscan': 'it',
+    'sakhir': 'bh',
+    'france': 'fr',
+    'french': 'fr',
+    'german': 'de',
+    'germany': 'de',
+    'malaysia': 'my',
+    'malaysian': 'my',
+    'korea': 'kr',
+    'korean': 'kr',
+    'india': 'in',
+    'indian': 'in',
+    'pre-season': 'bh',
+    'testing': 'bh',
+}
+
+def get_flag_country_code(race_name):
+    """Get the 2-letter country code for FlagCDN."""
+    race_lower = race_name.lower()
+    for keyword, code in FLAG_COUNTRY_CODES.items():
+        if keyword in race_lower:
+            return code
+    return 'xx'  # Unknown flag
 
 
 @app.callback(
@@ -288,10 +532,11 @@ def update_driver_options(selected_session, selected_race, selected_year):
         for d in drivers:
             driver_info = session.get_driver(d)
             abbr = driver_info['Abbreviation']
+            full_name = driver_info['FullName']
             team = driver_info['TeamName']
             color = plotting.get_team_color(team, session)
             driver_colors[abbr] = color
-            options.append({'label': abbr, 'value': abbr})
+            options.append({'label': full_name, 'value': abbr})
         
         # Add "All Drivers" option at the top
         all_drivers_option = {'label': '⭐ All Drivers', 'value': 'ALL_DRIVERS'}
@@ -350,6 +595,8 @@ def display_driver_tags(selected_drivers, driver_colors):
 
 @app.callback(
     Output('race-graph', 'figure'),
+    Output('race-graph', 'style'),
+    Output('race-graph-empty-state', 'style'),
     Input('race-sketch-button', 'n_clicks'),
     State('race-driver-dropdown', 'value'),
     State('race-team-dropdown', 'value'),
@@ -369,17 +616,23 @@ def update_graph(n_clicks, drivers, teams, year, race, session_type, chart_type,
         font=dict(color='white')
     )
     
+    # Styles for showing/hiding
+    graph_hidden = {'height': '80vh', 'display': 'none'}
+    graph_visible = {'height': '80vh', 'display': 'block'}
+    empty_hidden = {'display': 'none'}
+    empty_visible = {}
+    
     if n_clicks is None or n_clicks == 0:
         fig = go.Figure()
-        fig.update_layout(title="Select filters and click 'Sketch Graph' to display data", **empty_layout)
-        return fig
+        fig.update_layout(title="", **empty_layout)
+        return fig, graph_hidden, empty_visible
     
     # Handle Aero Performance - uses all teams automatically
     if chart_type == 'Aero Performance':
         if not race or not year or not session_type:
             fig = go.Figure()
             fig.update_layout(title="Please select Year, Race, and Session to sketch the graph.", **empty_layout)
-            return fig
+            return fig, graph_visible, empty_hidden
         
         try:
             session = fastf1.get_session(year, race, session_type)
@@ -399,17 +652,18 @@ def update_graph(n_clicks, drivers, teams, year, race, session_type, chart_type,
             session_names = {'FP1': 'FP1', 'FP2': 'FP2', 'FP3': 'FP3', 'R': 'Race', 'S': 'Sprint'}
             session_name = session_names.get(session_type, session_type)
             
-            return create_aero_performance_graph(session, list(all_teams), race, year, all_team_colors, empty_layout, session_name)
+            result = create_aero_performance_graph(session, list(all_teams), race, year, all_team_colors, empty_layout, session_name)
+            return result, graph_visible, empty_hidden
         except Exception as e:
             print(f"Error generating aero performance graph: {e}")
             fig = go.Figure()
             fig.update_layout(title=f"Error: {e}", **empty_layout)
-            return fig
+            return fig, graph_visible, empty_hidden
     
     if not drivers or not race or not year or not session_type:
         fig = go.Figure()
         fig.update_layout(title="Please select Year, Race, Session, and at least one Driver to sketch the graph.", **empty_layout)
-        return fig
+        return fig, graph_visible, empty_hidden
     
     # Get session name for title
     session_names = {'FP1': 'FP1', 'FP2': 'FP2', 'FP3': 'FP3', 'R': 'Race', 'S': 'Sprint'}
@@ -421,15 +675,18 @@ def update_graph(n_clicks, drivers, teams, year, race, session_type, chart_type,
         plotting.setup_mpl()
         
         if chart_type == 'Lap Times':
-            return create_laptime_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            result = create_laptime_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            return result, graph_visible, empty_hidden
         elif chart_type == 'Box Plot':
-            return create_boxplot_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            result = create_boxplot_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            return result, graph_visible, empty_hidden
         elif chart_type == 'Violin Plot':
-            return create_violin_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            result = create_violin_graph(session, drivers, race, year, driver_colors, empty_layout, session_name)
+            return result, graph_visible, empty_hidden
         else:
             fig = go.Figure()
             fig.update_layout(title="Unknown chart type selected.", **empty_layout)
-            return fig
+            return fig, graph_visible, empty_hidden
             
     except Exception as e:
         print(f"Error generating graph: {e}")
@@ -440,7 +697,7 @@ def update_graph(n_clicks, drivers, teams, year, race, session_type, chart_type,
             plot_bgcolor='rgba(0,0,0,0)',
             font=dict(color='white')
         )
-        return fig
+        return fig, graph_visible, empty_hidden
 
 
 def create_laptime_graph(session, drivers, race, year, driver_colors, empty_layout, session_name='Race'):
